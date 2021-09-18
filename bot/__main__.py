@@ -54,8 +54,7 @@ def stats(update, context):
             f'├─<b>🖥️ RAM:</b> <code>{memory}%</code>\n' \
             f'├─<b>💽 DISK:</b> <code>{disk}%</code>\n' \
             f'├──────<b>📊 DΛTΛ USΛGΣ 📊</b>─────\n├─<b>📤 Upload:</b> <code>{sent}</code>\n' \
-            f'├─<b>📥 Download:</b> <code>{recv}</code>\n'
-            f'╰──────────────────────────'
+            f'├─<b>📥 Download:</b> <code>{recv}</code>\n╰──────────────────────────'
     sendMessage(stats, context.bot, update)
 
 
