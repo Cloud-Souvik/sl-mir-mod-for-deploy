@@ -7,7 +7,7 @@ from pyrogram import idle
 from sys import executable
 from pyrogram import idle, filters, types, emoji
 from datetime import datetime
-from quoters import Quote
+#from quoters import Quote
 import pytz
 import time
 import threading
