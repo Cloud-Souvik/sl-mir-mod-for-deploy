@@ -2,10 +2,20 @@ import shutil, psutil
 import signal
 import os
 import asyncio
-
+import importlib
 from pyrogram import idle
 from sys import executable
+from pyrogram import idle, filters, types, emoji
+from datetime import datetime
+from quoters import Quote
+import pytz
+import time
+import threading
 
+from telegram.error import BadRequest, Unauthorized
+from telegram import ParseMode, BotCommand, InputTextMessageContent, InlineQueryResultArticle, Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import Filters, InlineQueryHandler, MessageHandler, CommandHandler, CallbackQueryHandler, CallbackContext
+from telegram.utils.helpers import escape_markdown
 from telegram import ParseMode
 from telegram.ext import CommandHandler
 from telegraph import Telegraph
@@ -17,11 +27,13 @@ from bot.helper.telegram_helper.message_utils import *
 from .helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from .helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper import button_build
+from bot.helper import get_text, check_heroku #---may get error
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror, clone, watch, shell, eval, torrent_search, delete, speedtest, count
-
+now=datetime.now(pytz.timezone(f'{TIMEZONE}'))
 
 def stats(update, context):
     currentTime = get_readable_time(time.time() - botStartTime)
+    current = now.strftime('📅: %d/%m/%Y\n⏲️: %I:%M:%S %p')
     total, used, free = shutil.disk_usage('.')
     total = get_readable_file_size(total)
     used = get_readable_file_size(used)
@@ -31,29 +43,32 @@ def stats(update, context):
     cpuUsage = psutil.cpu_percent(interval=0.5)
     memory = psutil.virtual_memory().percent
     disk = psutil.disk_usage('/').percent
-    stats = f'<b>Bot Uptime:</b> <code>{currentTime}</code>\n' \
-            f'<b>Total Disk Space:</b> <code>{total}</code>\n' \
-            f'<b>Used:</b> <code>{used}</code> ' \
-            f'<b>Free:</b> <code>{free}</code>\n\n' \
-            f'<b>Upload:</b> <code>{sent}</code>\n' \
-            f'<b>Download:</b> <code>{recv}</code>\n\n' \
-            f'<b>CPU:</b> <code>{cpuUsage}%</code> ' \
-            f'<b>RAM:</b> <code>{memory}%</code> ' \
-            f'<b>DISK:</b> <code>{disk}%</code>'
+    stats = f'<b>ℹ️ BOT UPTIME ℹ️</b>\n<code>{currentTime}</code>\n\n' \
+            f'<b>▶️ START TIME ▶️</b>\n<code>{current}</code>\n\n' \
+            f'<b>⚙️ SYATEM USAGE ⚙️</b>\n' \
+            f'<b>💿 Total:</b> <code>{total}</code>\n' \
+            f'<b>📀 Used:</b> <code>{used}</code>\n' \
+            f'<b>🕊️ Free:</b> <code>{free}</code>\n' \
+            f'<b>💻 CPU:</b> <code>{cpuUsage}%</code>\n' \
+            f'<b>🖥️ RAM:</b> <code>{memory}%</code>\n' \
+            f'<b>💽 DISK:</b> <code>{disk}%</code>\n\n' \
+            f'<b>📊 DATA USAGE 📊</b>\n<b>📤 Upload:</b> <code>{sent}</code>\n' \
+            f'<b>📥 Download:</b> <code>{recv}</code>'
     sendMessage(stats, context.bot, update)
 
 
 def start(update, context):
     buttons = button_build.ButtonMaker()
     buttons.buildbutton("Repo", "https://github.com/SlamDevs/slam-mirrorbot")
-    buttons.buildbutton("Channel", "https://t.me/SlamMirrorUpdates")
+    buttons.buildbutton("Channel", f"{CHANNEL_LINK}")
     reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
+    LOGGER.info('UID: {} - UN: {} - MSG: {}'.format(update.message.chat.id, update.message.chat.username, update.message.text))
+    uptime = get_readable_time((time.time() - botStartTime))
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
-        start_string = f'''
-This bot can mirror all your links to Google Drive!
-Type /{BotCommands.HelpCommand} to get a list of available commands
-'''
-        sendMarkup(start_string, context.bot, update, reply_markup)
+        if update.message.chat.type == "private" :
+            sendMessage(f"Hey I'm Alive 🙂\nSince <code>{uptime}</code>", context.bot, update)
+        else :
+            sendMarkup(start_string, context.bot, update, reply_markup)
     else:
         sendMarkup(
             'Oops! not a Authorized user.\nPlease deploy your own <b>slam-mirrorbot</b>.',
@@ -64,7 +79,8 @@ Type /{BotCommands.HelpCommand} to get a list of available commands
 
 
 def restart(update, context):
-    restart_message = sendMessage("Restarting, Please wait!", context.bot, update)
+    restart_message = sendMessage("🔄️ 𝐑𝐄𝐒𝐓𝐀𝐑𝐓𝐈𝐍𝐆...", context.bot, update)
+    LOGGER.info(f'Restarting The Bot...')
     # Save restart message object in order to reply to it after restarting
     with open(".restartmsg", "w") as f:
         f.truncate(0)
@@ -126,6 +142,8 @@ help_string_telegraph = f'''<br>
 <b>/{BotCommands.StatusCommand}</b>: Shows a status of all the downloads
 <br><br>
 <b>/{BotCommands.StatsCommand}</b>: Show Stats of the machine the bot is hosted on
+<br><br>
+<b>/{BotCommands.UsageCommand}</b>: To see Heroku Dyno Stats (Owner & Sudo only)
 '''
 help = Telegraph(access_token=telegraph_token).create_page(
         title='Slam Mirrorbot Help',
@@ -190,12 +208,42 @@ botcmds = [
         (f'{BotCommands.StatsCommand}','Bot Usage Stats'),
         (f'{BotCommands.PingCommand}','Ping the Bot'),
         (f'{BotCommands.RestartCommand}','Restart the bot [owner/sudo only]'),
+        (f'{BotCommands.UsageCommand}','See dyno [owner/sudo only]'),
         (f'{BotCommands.LogCommand}','Get the Bot Log [owner/sudo only]'),
         (f'{BotCommands.TsHelpCommand}','Get help for Torrent search module')
     ]
 '''
 
 def main():
+    # Heroku restarted
+    quo_te = Quote.print()
+    GROUP_ID = f'{RESTARTED_GROUP_ID}'
+    kie = datetime.now(pytz.timezone(f'{TIMEZONE}'))
+    jam = kie.strftime('\n📅 𝘿𝘼𝙏𝙀: %d/%m/%Y\n⏲️ 𝙏𝙄𝙈𝙀: %I:%M%P')
+    if GROUP_ID is not None and isinstance(GROUP_ID, str):        
+        try:
+            dispatcher.bot.sendMessage(f"{GROUP_ID}", f"♻️ 𝐁𝐎𝐓 𝐆𝐎𝐓 𝐑𝐄𝐒𝐓𝐀𝐑𝐓𝐄𝐃 ♻️\n{jam}\n\n🗺️ 𝙏𝙄𝙈𝙀 𝙕𝙊𝙉𝙀\n{TIMEZONE}\n\n𝙿𝙻𝙴𝙰𝚂𝙴 𝚁𝙴-𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳 𝙰𝙶𝙰𝙸𝙽\n\n𝐐𝐮𝐨𝐭𝐞\n{quo_te}\n\n#Restarted")
+        except Unauthorized:
+            LOGGER.warning(
+                "Bot isnt able to send message to support_chat, go and check!"
+            )
+        except BadRequest as e:
+            LOGGER.warning(e.message)
+
+# Heroku restarted
+    GROUP_ID2 = f'{RESTARTED_GROUP_ID2}'
+    kie = datetime.now(pytz.timezone(f'{TIMEZONE}'))
+    jam = kie.strftime('\n📅 𝘿𝘼𝙏𝙀: %d/%m/%Y\n⏲️ 𝙏𝙄𝙈𝙀: %I:%M%P')
+    if GROUP_ID2 is not None and isinstance(GROUP_ID2, str):        
+        try:
+            dispatcher.bot.sendMessage(f"{GROUP_ID2}", f"♻️ 𝐁𝐎𝐓 𝐆𝐎𝐓 𝐑𝐄𝐒𝐓𝐀𝐑𝐓𝐄𝐃 ♻️\n{jam}\n\n🗺️ 𝙏𝙄𝙈𝙀 𝙕𝙊𝙉𝙀\n{TIMEZONE}\n\n𝙿𝙻𝙴𝙰𝚂𝙴 𝚁𝙴-𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳 𝙰𝙶𝙰𝙸𝙽\n\n𝐐𝐮𝐨𝐭𝐞\n{quo_te}\n\n#Restarted")
+        except Unauthorized:
+            LOGGER.warning(
+                "Bot isnt able to send message to support_chat, go and check!"
+            )
+        except BadRequest as e:
+            LOGGER.warning(e.message)
+            #------------------------------------------------------#
     fs_utils.start_cleanup()
     if IS_VPS:
         asyncio.get_event_loop().run_until_complete(start_server_async(PORT))
@@ -203,7 +251,7 @@ def main():
     if os.path.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
-        bot.edit_message_text("Restarted successfully!", chat_id, msg_id)
+        bot.edit_message_text("📶𝐑𝐄𝐒𝐓𝐀𝐑𝐓𝗘𝗗 𝐒𝐔𝐂𝐂𝐄𝐒𝐒𝐅𝐔𝐋𝐋𝐘...", chat_id, msg_id)
         os.remove(".restartmsg")
     elif OWNER_ID:
         try:
@@ -232,7 +280,8 @@ def main():
     dispatcher.add_handler(stats_handler)
     dispatcher.add_handler(log_handler)
     updater.start_polling(drop_pending_updates=IGNORE_PENDING_REQUESTS)
-    LOGGER.info("Bot Started!")
+    LOGGER.info("⚠️ If Any optional vars ain't filled, it will use Defaults vars")
+    LOGGER.info("📶 Bot Started!...Ready to Gooooo...")
     signal.signal(signal.SIGINT, fs_utils.exit_clean_up)
 
 app.start()
