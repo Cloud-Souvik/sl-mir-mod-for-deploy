@@ -115,9 +115,9 @@ def update_all_messages():
     msg, buttons = get_readable_message()
     if msg is None:
         return
-    msg += f"╭───\n├─<b>CPU:</b> <code>{psutil.cpu_percent()}%</code>" \
-           f"\n├─<b>RAM:</b> <code>{psutil.virtual_memory().percent}%</code>" \
-           f"\n├─<b>\nDISK:</b> <code>{psutil.disk_usage('/').percent}%</code>\N╰───"
+    msg += f"<b>CPU:</b> <code>{psutil.cpu_percent()}%</code>" \
+           f"\n<b>RAM:</b> <code>{psutil.virtual_memory().percent}%</code>" \
+           f"\n<b>DISK:</b> <code>{psutil.disk_usage('/').percent}%</code>"
     with download_dict_lock:
         dlspeed_bytes = 0
         uldl_bytes = 0
