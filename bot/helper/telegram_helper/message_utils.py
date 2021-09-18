@@ -1,26 +1,68 @@
-from telegram import InlineKeyboardMarkup
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton	
+from telegram.ext import CallbackContext, CallbackQueryHandler
 from telegram.message import Message
 from telegram.update import Update
 import psutil, shutil
 import time
-from bot import AUTO_DELETE_MESSAGE_DURATION, LOGGER, bot, \
-    status_reply_dict, status_reply_dict_lock, download_dict, download_dict_lock, botStartTime, Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL
+import pytz
+from bot import *
 from bot.helper.ext_utils.bot_utils import get_readable_message, get_readable_file_size, get_readable_time, MirrorStatus, setInterval
 from telegram.error import TimedOut, BadRequest
-
+#--------------------------------#
 
 def sendMessage(text: str, bot, update: Update):
     try:
         return bot.send_message(update.message.chat_id,
                             reply_to_message_id=update.message.message_id,
-                            text=text, allow_sending_without_reply=True,  parse_mode='HTMl')
+                            text=text, disable_web_page_preview=True, allow_sending_without_reply=True, parse_mode='HTMl')
     except Exception as e:
         LOGGER.error(str(e))
+        
 def sendMarkup(text: str, bot, update: Update, reply_markup: InlineKeyboardMarkup):
-    return bot.send_message(update.message.chat_id,
+    try:
+        return bot.send_message(update.message.chat_id,
                             reply_to_message_id=update.message.message_id,
                             text=text, reply_markup=reply_markup, allow_sending_without_reply=True, parse_mode='HTMl')
+    except Exception as e:
+        LOGGER.error(str(e))
+ 
+def sendLog(text: str, bot, update: Update, reply_markup: InlineKeyboardMarkup):
+    try:
+        return bot.send_message(f"{LOG_CHANNEL_ID}",
+                             reply_to_message_id=update.message.message_id,
+                             text=text, disable_web_page_preview=True, reply_markup=reply_markup, allow_sending_without_reply=True, parse_mode='HTMl')
+    except Exception as e:
+        LOGGER.error(str(e))
 
+def sendtextlog(text: str, bot, update: Update):
+    try:
+        return bot.send_message(f"{LOG_SEND_TEXT}",
+                             reply_to_message_id=update.message.message_id,
+                             text=text, disable_web_page_preview=True, allow_sending_without_reply=True, parse_mode='HTMl')
+    except Exception as e:
+        LOGGER.error(str(e))
+
+
+def sendPrivate(text: str, bot, update: Update, reply_markup: InlineKeyboardMarkup):
+    bot_d = bot.get_me()
+    b_uname = bot_d.username
+    
+    try:
+        return bot.send_message(update.message.from_user.id,
+                             reply_to_message_id=update.message.message_id,
+                             text=text, disable_web_page_preview=True, reply_markup=reply_markup, allow_sending_without_reply=True, parse_mode='HTMl')
+    except Exception as e:
+        LOGGER.error(str(e))
+        if "Forbidden" in str(e):
+            uname = f'<a href="tg://user?id={update.message.from_user.id}">{update.message.from_user.first_name}</a>'
+            botstart = f"http://t.me/{b_uname}?start=start"
+            keyboard = [
+            [InlineKeyboardButton("𝗦𝗧𝗔𝗥𝗧 𝗠𝗘", url = f"{botstart}")],
+            [InlineKeyboardButton("𝗦𝗘𝗘 𝗟𝗢𝗚𝗦", url = f"{LOG_CHANNEL_LINK}")]]
+            sendMarkup(f"𝙳𝙴𝙰𝚁 {uname},\n\n<b>⭑⭑⭑★✪ You Haven't Started Me in PM yet ✪★⭑⭑⭑</b>\n\n<b>ғʀᴏᴍ ɴᴏᴡ ᴏɴ ɪ'ʟʟ ᴤᴇɴᴅ ʟɪɴᴋᴤ ɪɴ ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ ᴀɴᴅ ʟᴏɢ ᴄʜᴀɴɴᴇʟ ᴏɴʟʏ</b>", bot, update, reply_markup=InlineKeyboardMarkup(keyboard))
+            return
+
+    
 def editMessage(text: str, message: Message, reply_markup=None):
     try:
         bot.edit_message_text(text=text, message_id=message.message_id,
@@ -73,9 +115,9 @@ def update_all_messages():
     msg, buttons = get_readable_message()
     if msg is None:
         return
-    msg += f"<b>CPU:</b> <code>{psutil.cpu_percent()}%</code>" \
-           f" <b>RAM:</b> <code>{psutil.virtual_memory().percent}%</code>" \
-           f" <b>DISK:</b> <code>{psutil.disk_usage('/').percent}%</code>"
+    msg += f"╭───\n├─<b>CPU:</b> <code>{psutil.cpu_percent()}%</code>" \
+           f"\n├─<b>RAM:</b> <code>{psutil.virtual_memory().percent}%</code>" \
+           f"\n├─<b>\nDISK:</b> <code>{psutil.disk_usage('/').percent}%</code>\N╰───"
     with download_dict_lock:
         dlspeed_bytes = 0
         uldl_bytes = 0
