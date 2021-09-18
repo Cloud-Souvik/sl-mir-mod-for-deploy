@@ -43,17 +43,19 @@ def stats(update, context):
     cpuUsage = psutil.cpu_percent(interval=0.5)
     memory = psutil.virtual_memory().percent
     disk = psutil.disk_usage('/').percent
-    stats = f'<b>ℹ️ BOT UPTIME ℹ️</b>\n<code>{currentTime}</code>\n\n' \
-            f'<b>▶️ START TIME ▶️</b>\n<code>{current}</code>\n\n' \
-            f'<b>⚙️ SYSTEM USAGE ⚙️</b>\n' \
-            f'<b>💿 Total:</b> <code>{total}</code>\n' \
-            f'<b>📀 Used:</b> <code>{used}</code>\n' \
-            f'<b>🕊️ Free:</b> <code>{free}</code>\n' \
-            f'<b>💻 CPU:</b> <code>{cpuUsage}%</code>\n' \
-            f'<b>🖥️ RAM:</b> <code>{memory}%</code>\n' \
-            f'<b>💽 DISK:</b> <code>{disk}%</code>\n\n' \
-            f'<b>📊 DATA USAGE 📊</b>\n<b>📤 Upload:</b> <code>{sent}</code>\n' \
-            f'<b>📥 Download:</b> <code>{recv}</code>'
+    stats = f'╭──────┗ 𝐁𝐎𝐓 𝐒𝐓𝐀𝐓𝐒 ┓────\n' \
+            f'├─<b>⌛ BOT UPTIME:</b> <code>{currentTime}</code>\n' \
+            f'├─<b>⏳ START TIME:</b> <code>{current}</code>\n' \
+            f'├──────<b>⚙️ ƧYƧTΣM UƧΛGΣ ⚙️</b>─────\n' \
+            f'├─<b>💿 Total:</b> <code>{total}</code>\n' \
+            f'├─<b>📀 Used:</b> <code>{used}</code>\n' \
+            f'├─<b>🕊️ Free:</b> <code>{free}</code>\n├─────────\n' \
+            f'├─<b>💻 CPU:</b> <code>{cpuUsage}%</code>\n' \
+            f'├─<b>🖥️ RAM:</b> <code>{memory}%</code>\n' \
+            f'├─<b>💽 DISK:</b> <code>{disk}%</code>\n' \
+            f'├──────<b>📊 DΛTΛ USΛGΣ 📊</b>─────\n├─<b>📤 Upload:</b> <code>{sent}</code>\n' \
+            f'├─<b>📥 Download:</b> <code>{recv}</code>\n'
+            f'╰──────────────────────────'
     sendMessage(stats, context.bot, update)
 
 
