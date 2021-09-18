@@ -150,6 +150,9 @@ try:
     AUTO_DELETE_MESSAGE_DURATION = int(getConfig('AUTO_DELETE_MESSAGE_DURATION'))
     TELEGRAM_API = getConfig('TELEGRAM_API')
     TELEGRAM_HASH = getConfig('TELEGRAM_HASH')
+    LOG_CHANNEL_ID = getConfig('LOG_CHANNEL_ID')
+    LOG_CHANNEL_LINK = getConfig('LOG_CHANNEL_LINK')
+    LOG_SEND_TEXT = getConfig('LOG_SEND_TEXT')
 except KeyError as e:
     LOGGER.error("One or more env variables missing! Exiting now")
     exit(1)
@@ -158,6 +161,7 @@ try:
     if len(DB_URI) == 0:
         raise KeyError
 except KeyError:
+    logging.warning('Database not provided!')
     DB_URI = None
 if DB_URI is not None:
     try:
@@ -318,6 +322,24 @@ try:
     IGNORE_PENDING_REQUESTS = IGNORE_PENDING_REQUESTS.lower() == 'true'
 except KeyError:
     IGNORE_PENDING_REQUESTS = False
+try:
+    FINISHED_PROGRESS_STR = getConfig('FINISHED_PROGRESS_STR')
+    if len(FINISHED_PROGRESS_STR) == 0:
+        FINISHED_PROGRESS_STR = '▣'
+except KeyError:
+    FINISHED_PROGRESS_STR = '▣'
+try:
+    UNFINISHED_PROGRESS_STR = getConfig('UNFINISHED_PROGRESS_STR')
+    if len(UNFINISHED_PROGRESS_STR) == 0:
+        UNFINISHED_PROGRESS_STR = '▢'
+except KeyError:
+    UNFINISHED_PROGRESS_STR = '▢'
+try:
+    TIMEZONE = getConfig('TIMEZONE')
+    if len(TIMEZONE) == 0:
+        TIMEZONE = None
+except KeyError:
+    TIMEZONE = 'Asia/Kolkata'
 try:
     BASE_URL = getConfig('BASE_URL_OF_BOT')
     if len(BASE_URL) == 0:
