@@ -217,7 +217,7 @@ botcmds = [
 
 def main():
     # Heroku restarted
-    quo_te = Quote.print()
+    quo_te = "sample quote"
     GROUP_ID = f'{RESTARTED_GROUP_ID}'
     kie = datetime.now(pytz.timezone(f'{TIMEZONE}'))
     jam = kie.strftime('\n📅 𝘿𝘼𝙏𝙀: %d/%m/%Y\n⏲️ 𝙏𝙄𝙈𝙀: %I:%M%P')
