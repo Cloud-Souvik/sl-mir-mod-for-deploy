@@ -1,13 +1,14 @@
 from telegram.ext import CommandHandler
 from telegram import Bot, Update
-from bot import DOWNLOAD_DIR, dispatcher, LOGGER
-from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage
+from bot import DOWNLOAD_DIR, dispatcher, LOGGER, Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL
+from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, update_all_messages, sendtextlog
 from .mirror import MirrorListener
 from bot.helper.mirror_utils.download_utils.youtube_dl_download_helper import YoutubeDLHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.ext_utils.bot_utils import setInterval
 import threading
-
+import time
 
 def _watch(bot: Bot, update, isTar=False, isZip=False):
     mssg = update.message.text
@@ -42,12 +43,23 @@ def _watch(bot: Bot, update, isTar=False, isZip=False):
       name = name_args[1]
     except IndexError:
       name = ""
-    
+    reply_to = update.message.reply_to_message
+    if reply_to is not None:
+        tag = reply_to.from_user.username
+    else:
+        tag = None
     pswd = ""
-    listener = MirrorListener(bot, update, pswd, isTar, isZip=isZip)
+    listener = MirrorListener(bot, update, pswd, isTar, tag, isZip=isZip)
     ydl = YoutubeDLHelper(listener)
     threading.Thread(target=ydl.add_download,args=(link, f'{DOWNLOAD_DIR}{listener.uid}', qual, name)).start()
+    uname = f'<a href="tg://user?id={update.message.from_user.id}">{update.message.from_user.first_name}</a>'
+    uid = f"<a>{update.message.from_user.id}</a>"
+    msg = f"{uname} has sent - \n\n<code>{link}</code>\n\nUser ID : {uid}"
+    sendtextlog(msg, bot, update)
     sendStatusMessage(update, bot)
+    time.sleep(1)
+    if len(Interval) == 0:
+        Interval.append(setInterval(DOWNLOAD_STATUS_UPDATE_INTERVAL, update_all_messages))
 
 
 def watchTar(update, context):
