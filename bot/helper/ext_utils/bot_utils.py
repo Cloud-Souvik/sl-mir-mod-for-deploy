@@ -162,7 +162,7 @@ def get_readable_message():
                     MirrorStatus.STATUS_ARCHIVING,
                     MirrorStatus.STATUS_EXTRACTING,
                 ]:
-                    msg += f"\n├<code>{get_progress_bar_string(download)} {download.progress()}</code>\n│"
+                    msg += f"\n├<code>{get_progress_bar_string(download)} {download.progress()}</code>"
                     if download.status() == MirrorStatus.STATUS_DOWNLOADING:
                         msg += f"\n├<b>📥 Downloaded:</b> {get_readable_file_size(download.processed_bytes())}\n├<b>💾 Total</b>: {download.size()}"
                     elif download.status() == MirrorStatus.STATUS_CLONING:
@@ -185,7 +185,7 @@ def get_readable_message():
                     except:
                         pass
                     msg += f"\n├⛔ <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
-                msg += "\n├────────────────── \n"
+                msg += "\n├───────────── \n"
                 if STATUS_LIMIT is not None and INDEX >= COUNT + STATUS_LIMIT:
                         break
         if STATUS_LIMIT is not None:
