@@ -2,10 +2,13 @@ import requests
 from telegram.ext import CommandHandler
 from telegram import InlineKeyboardMarkup
 from fnmatch import fnmatch
+from telegram.message import Message
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot import Interval, INDEX_URL, BUTTON_FOUR_NAME, BUTTON_FOUR_URL, BUTTON_FIVE_NAME, BUTTON_FIVE_URL, BUTTON_SIX_NAME, BUTTON_SIX_URL, BLOCK_MEGA_FOLDER, BLOCK_MEGA_LINKS, VIEW_LINK, aria2
 from bot import dispatcher, DOWNLOAD_DIR, download_dict, download_dict_lock, SHORTENER, SHORTENER_API, TAR_UNZIP_LIMIT
 from bot.helper.ext_utils import fs_utils, bot_utils
+from bot.helper.ext_utils.bot_utils import *
 from bot.helper.ext_utils.shortenurl import short_url
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
 from bot.helper.mirror_utils.download_utils.aria2_download import AriaDownloadHelper
@@ -38,9 +41,10 @@ ariaDlManager = AriaDownloadHelper()
 ariaDlManager.start_listener()
 
 class MirrorListener(listeners.MirrorListeners):
-    def __init__(self, bot, update, pswd, isTar=False, extract=False, isZip=False, isQbit=False):
+    def __init__(self, bot, update, pswd, isTar=False, extract=False, isZip=False, isQbit=False, tag=None):
         super().__init__(bot, update)
         self.isTar = isTar
+        self.tag = tag
         self.extract = extract
         self.isZip = isZip
         self.isQbit = isQbit
@@ -216,14 +220,22 @@ class MirrorListener(listeners.MirrorListeners):
             else:
                 uname = f'<a href="tg://user?id={self.message.from_user.id}">{self.message.from_user.first_name}</a>'
             if uname is not None:
-                msg += f'\n\ncc: {uname}'
+                msg += f'\n\nRequest by: {uname}'
+                msg_g = f'\n\n - 𝙽𝚎𝚟𝚎𝚛 𝚂𝚑𝚊𝚛𝚎 𝙶-𝙳𝚛𝚒𝚟𝚎\n - 𝙽𝚎𝚟𝚎𝚛 𝚂𝚑𝚊𝚛𝚎 𝙸𝚗𝚍𝚎𝚡 𝙻𝚒𝚗𝚔\n - 𝙹𝚘𝚒𝚗 𝚃𝙳 𝚃𝚘 𝙰𝚌𝚌𝚎𝚜𝚜 𝙶-𝙳𝚛𝚒𝚟𝚎 𝙻𝚒𝚗𝚔'
             try:
                 fs_utils.clean_download(download_dict[self.uid].path())
             except FileNotFoundError:
                 pass
             del download_dict[self.uid]
             count = len(download_dict)
-        sendMarkup(msg, self.bot, self.update, InlineKeyboardMarkup(buttons.build_menu(2)))
+        fwdpm = f'\n\n𝐘𝐨𝐮 𝐂𝐚𝐧 𝐅𝐢𝐧𝐝 𝐔𝐩𝐥𝐨𝐚𝐝 𝐈𝐧 𝐏𝐫𝐢𝐯𝐚𝐭𝐞 𝐂𝐡𝐚𝐭 𝐨𝐫 𝐂𝐥𝐢𝐜𝐤 𝐛𝐮𝐭𝐭𝐨𝐧 𝐛𝐞𝐥𝐨𝐰 𝐭𝐨 𝐒𝐞𝐞 𝐚𝐭 𝐥𝐨𝐠 𝐜𝐡𝐚𝐧𝐧𝐞𝐥'
+        logmsg = sendLog(msg + msg_g, self.bot, self.update, InlineKeyboardMarkup(buttons.build_menu(2)))
+        if logmsg:
+            log_m = f"\n\n<b>Link Uploaded, Click Below Button👇</b>"
+        else:
+            pass
+        sendMarkup(msg + fwdpm, self.bot, self.update, InlineKeyboardMarkup([[InlineKeyboardButton(text="𝐂𝐋𝐈𝐂𝐊 𝐇𝐄𝐑𝐄", url=logmsg.link)]]))
+        sendPrivate(msg + msg_g, self.bot, self.update, InlineKeyboardMarkup(buttons.build_menu(2)))
         if count == 0:
             self.clean()
         else:
@@ -255,8 +267,15 @@ def _mirror(bot, update, isTar=False, extract=False, isZip=False, isQbit=False):
     message_args = mesg[0].split(' ')
     name_args = mesg[0].split('|')
     qbitsel = False
+    user_id = update.effective_user.id
+    bot_d = bot.get_me()
+    b_uname = bot_d.username
+    uname = f'<a href="tg://user?id={update.message.from_user.id}">{update.message.from_user.first_name}</a>'
+    uid= f"<a>{update.message.from_user.id}</a>"
+    
     try:
         link = message_args[1]
+        print(link)
         if link == "s":
             qbitsel = True
             link = message_args[2]
@@ -290,6 +309,7 @@ def _mirror(bot, update, isTar=False, extract=False, isZip=False, isQbit=False):
     reply_to = update.message.reply_to_message
     if reply_to is not None:
         file = None
+        tag = reply_to.from_user.username
         media_array = [reply_to.document, reply_to.video, reply_to.audio]
         for i in media_array:
             if i is not None:
@@ -347,7 +367,7 @@ def _mirror(bot, update, isTar=False, extract=False, isZip=False, isQbit=False):
 
     if bot_utils.is_gdrive_link(link):
         if not isTar and not extract:
-            sendMessage(f"Use /{BotCommands.CloneCommand} to clone Google Drive file/folder\nUse /{BotCommands.TarMirrorCommand} to make tar of Google Drive folder\nUse /{BotCommands.UnzipMirrorCommand} to extracts archive Google Drive file", bot, update)
+            sendMessage(f"≻Use /{BotCommands.CloneCommand} to clone Google Drive file/folder\n≻Use /{BotCommands.TarMirrorCommand} to make tar of Google Drive folder\n≻Use /{BotCommands.ZipMirrorCommand} to make zip of Google Drive folder\n≻Use /{BotCommands.UnzipMirrorCommand} to extracts archive Google Drive file", bot, update)
             return
         res, size, name, files = gdriveTools.GoogleDriveHelper().clonehelper(link)
         if res != "":
