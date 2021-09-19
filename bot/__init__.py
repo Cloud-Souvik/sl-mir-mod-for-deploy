@@ -44,7 +44,7 @@ if CONFIG_FILE_URL is not None:
     else:
         logging.error(res.status_code)
 
-load_dotenv('config2.env') #--Changed config.env file name to config2.env---#
+load_dotenv('config2.env') #--Change this config.env file name for each new deply---#
 
 SERVER_PORT = os.environ.get('SERVER_PORT', None)
 PORT = os.environ.get('PORT', SERVER_PORT)
