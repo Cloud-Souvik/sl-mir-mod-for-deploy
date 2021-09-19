@@ -5,7 +5,7 @@ import time
 import math
 
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot import dispatcher, download_dict, download_dict_lock, STATUS_LIMIT
+from bot import *
 from telegram import InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler
 from bot.helper.telegram_helper import button_build, message_utils
@@ -21,18 +21,17 @@ PAGE_NO = 1
 
 
 class MirrorStatus:
-    STATUS_UPLOADING = "Uploading...📤"
-    STATUS_DOWNLOADING = "Downloading...📥"
-    STATUS_CLONING = "Cloning...♻️"
-    STATUS_WAITING = "Queued...📝"
-    STATUS_FAILED = "Failed 🚫. Cleaning Download..."
-    STATUS_PAUSE = "Paused...⭕️"
-    STATUS_ARCHIVING = "Archiving...🔐"
-    STATUS_EXTRACTING = "Extracting...📂"
+    STATUS_UPLOADING = "𝗨𝗣𝗟𝗢𝗔𝗗𝗜𝗡𝗚" # 🅄🄿🄻🄾🄰🄳🄸🄽🄶
+    STATUS_DOWNLOADING = "𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗜𝗡𝗚" # 🄳🄾🅆🄽🄻🄾🄰🄳🄸🄽🄶
+    STATUS_CLONING = "𝗖𝗟𝗢𝗡𝗜𝗡𝗚" # 🄲🄻🄾🄽🄽🄸🄽🄶
+    STATUS_WAITING = "𝗤𝗨𝗘𝗨𝗘𝗗" # 🅀🅄🄴🅄🄴🄳
+    STATUS_FAILED = "𝗙𝗔𝗜𝗟𝗘𝗗" # 🄵🄰🄸🄻🄴🄳
+    STATUS_ARCHIVING = "𝗔𝗥𝗖𝗛𝗜𝗩𝗜𝗡𝗚" # 🄰🅁🄲🄷🄸🅅🄸🄽🄶
+    STATUS_EXTRACTING = "𝗘𝗫𝗧𝗥𝗔𝗖𝗧𝗜𝗡𝗚" # 🄴🅇🅃🅁🄰🄲🅃🄸🄽🄶
 
 
-PROGRESS_MAX_SIZE = 100 // 8
-PROGRESS_INCOMPLETE = ['▏', '▎', '▍', '▌', '▋', '▊', '▉']
+PROGRESS_MAX_SIZE = 100 // 10
+# PROGRESS_INCOMPLETE = ['▏', '▎', '▍', '▌', '▋', '▊', '▉']
 
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 
@@ -103,18 +102,44 @@ def getAllDownload():
 
 
 def get_progress_bar_string(status):
-    completed = status.processed_bytes() / 8
-    total = status.size_raw() / 8
+    completed = status.processed_bytes() / 10
+    total = status.size_raw() / 10
     p = 0 if total == 0 else round(completed * 100 / total)
     p = min(max(p, 0), 100)
-    cFull = p // 8
-    cPart = p % 8 - 1
-    p_str = '█' * cFull
+    cFull = p // 10
+    cPart = p % 10 - 1
+    p_str = FINISHED_PROGRESS_STR * cFull
     if cPart >= 0:
-        p_str += PROGRESS_INCOMPLETE[cPart]
-    p_str += ' ' * (PROGRESS_MAX_SIZE - cFull)
+        # p_str += PROGRESS_INCOMPLETE[cPart]
+        p_str += FINISHED_PROGRESS_STR
+    p_str += UNFINISHED_PROGRESS_STR * (PROGRESS_MAX_SIZE - cFull)
     p_str = f"[{p_str}]"
     return p_str
+
+
+def progress_bar(percentage):
+    """Returns a progress bar for download
+    """
+    #percentage is on the scale of 0-1
+    comp = FINISHED_PROGRESS_STR
+    ncomp = UNFINISHED_PROGRESS_STR
+    pr = ""
+
+    if isinstance(percentage, str):
+        return "NaN"
+
+    try:
+        percentage=int(percentage)
+    except:
+        percentage = 0
+
+    for i in range(1,11):
+        if i <= int(percentage/10):
+            pr += comp
+        else:
+            pr += ncomp
+    return pr
+
 
 
 def get_readable_message():
@@ -131,44 +156,46 @@ def get_readable_message():
         for download in list(download_dict.values()):
             INDEX += 1
             if INDEX > COUNT:
-                msg += f"<b>Filename:</b> <code>{download.name()}</code>"
-                msg += f"\n<b>Status:</b> <i>{download.status()}</i>"
+                msg += f"\n<b>ℹ️ Status ℹ️</b>\n<i>{download.status()}</i>\n"                
+                msg += f"<b>📁 Filename:</b> <code>{download.name()}</code>"
                 if download.status() not in [
                     MirrorStatus.STATUS_ARCHIVING,
                     MirrorStatus.STATUS_EXTRACTING,
                 ]:
                     msg += f"\n<code>{get_progress_bar_string(download)} {download.progress()}</code>"
-                    if download.status() == MirrorStatus.STATUS_CLONING:
-                        msg += f"\n<b>Cloned:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
-                    elif download.status() == MirrorStatus.STATUS_UPLOADING:
-                        msg += f"\n<b>Uploaded:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
+                    if download.status() == MirrorStatus.STATUS_DOWNLOADING:
+                        msg += f"\n<b>📥 Downloaded:</b> {get_readable_file_size(download.processed_bytes())}<b>\n💾 Size</b>: {download.size()}"
+                    elif download.status() == MirrorStatus.STATUS_CLONING:
+                        msg += f"\n<b>♻️ Cloning:</b> {get_readable_file_size(download.processed_bytes())}<b>\n<b>⚙️ Engine: ʀᴄʟᴏɴᴇ</b>\n💾 Size</b>: {download.size()}"
                     else:
-                        msg += f"\n<b>Downloaded:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
-                    msg += f"\n<b>Speed:</b> <code>{download.speed()}</code>" \
-                            f", <b>ETA:</b> <code>{download.eta()}</code> "
+                        msg += f"\n<b>📤 Uploaded:</b> {get_readable_file_size(download.processed_bytes())}<b>\n<b>⚙️ Engine: ʀᴄʟᴏɴᴇ</b>\n💾 Size</b>: {download.size()}"
+                    msg += f"\n<b>⚡ Speed:</b> {download.speed()}" \
+                            f"\n<b>⏳ ETA:</b> {download.eta()} "
                     # if hasattr(download, 'is_torrent'):
                     try:
-                        msg += f"\n<b>Seeders:</b> <code>{download.aria_download().num_seeders}</code>" \
-                            f" | <b>Peers:</b> <code>{download.aria_download().connections}</code>"
+                        msg += f"\n<b>👥 User:</b> <b>{download.message.from_user.first_name}</b>\n<b>⚠️ Warn:</b><code>/warn {download.message.from_user.id}</code>"
                     except:
                         pass
                     try:
-                        msg += f"\n<b>Seeders:</b> <code>{download.torrent_info().num_seeds}</code>" \
-                            f" | <b>Leechers:</b> <code>{download.torrent_info().num_leechs}</code>"
+                        msg += f"\n<b>⚙️ Engine: Aria2</b>\n<b>📶:</b> {download.aria_download().connections}"
                     except:
                         pass
-                    msg += f"\n<b>To Stop:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
+                    try:
+                        msg += f" | <b>🌱:</b> {download.aria_download().num_seeders}"
+                    except:
+                        pass
+                    msg += f"\n<b>⛔ Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
                 msg += "\n\n"
                 if STATUS_LIMIT is not None and INDEX >= COUNT + STATUS_LIMIT:
-                    break
+                        break
         if STATUS_LIMIT is not None:
             if INDEX > COUNT + STATUS_LIMIT:
                 return None, None
             if dick_no > STATUS_LIMIT:
-                msg += f"<b>Page:</b> <code>{PAGE_NO}/{pages}</code> | <b>Tasks:</b> <code>{dick_no}</code>\n"
+                msg += f"📖 Page: <code>{PAGE_NO}/{pages}</code> | <code>📄 Tasks: {dick_no}</code>\n"
                 buttons = button_build.ButtonMaker()
-                buttons.sbutton("Previous", "pre")
-                buttons.sbutton("Next", "nex")
+                buttons.sbutton("⬅️", "pre")
+                buttons.sbutton("➡️", "nex")
                 button = InlineKeyboardMarkup(buttons.build_menu(2))
                 return msg, button
         return msg, ""
