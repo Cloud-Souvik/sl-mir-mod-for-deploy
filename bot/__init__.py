@@ -153,6 +153,8 @@ try:
     LOG_CHANNEL_ID = getConfig('LOG_CHANNEL_ID')
     LOG_CHANNEL_LINK = getConfig('LOG_CHANNEL_LINK')
     LOG_SEND_TEXT = getConfig('LOG_SEND_TEXT')
+    RESTARTED_GROUP_ID = getConfig('LOG_SEND_TEXT')
+    RESTARTED_GROUP_ID2 = getConfig('LOG_SEND_TEXT')
 except KeyError as e:
     LOGGER.error("One or more env variables missing! Exiting now")
     exit(1)
