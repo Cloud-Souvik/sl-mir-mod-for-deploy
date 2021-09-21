@@ -223,7 +223,7 @@ def main():
     jam = kie.strftime('\n📅 𝗗𝗔𝗧𝗘: %d/%m/%Y\n⏲️ 𝗧𝗜𝗠𝗘: %I:%M%P')
     if GROUP_ID is not None and isinstance(GROUP_ID, str):        
         try:
-            dispatcher.bot.sendMessage(f"{GROUP_ID}", f"♻️ 𝗕𝗢𝗧 𝗥𝗘𝗦𝗧𝗔𝗥𝗧𝗘𝗗 ♻️\n{jam}\n\n🗺️『𝗧𝗜𝗠𝗘 𝗭𝗢𝗡𝗘』\n{TIMEZONE}\n\n𝙿𝙻𝙴𝙰𝚂𝙴 𝚁𝙴-𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳 𝙰𝙶𝙰𝙸𝙽\n\n𝐐𝐮𝐨𝐭𝐞\n{quo_te}")
+            dispatcher.bot.sendMessage(f"{GROUP_ID}", f"♻️ 𝗕𝗢𝗧 𝗥𝗘𝗦𝗧𝗔𝗥𝗧𝗘𝗗 ♻️\n{jam}\n\n『𝗧𝗜𝗠𝗘 𝗭𝗢𝗡𝗘』{TIMEZONE}\n\n𝙿𝙻𝙴𝙰𝚂𝙴 𝚁𝙴-𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳 𝙰𝙶𝙰𝙸𝙽\n\n𝐐𝐮𝐨𝐭𝐞\n{quo_te}")
         except Unauthorized:
             LOGGER.warning(
                 "Bot isnt able to send message to support_chat, go and check!"
@@ -237,7 +237,7 @@ def main():
     jam = kie.strftime('\n📅 𝗗𝗔𝗧𝗘: %d/%m/%Y\n⏲️ 𝗧𝗜𝗠𝗘: %I:%M%P')
     if GROUP_ID2 is not None and isinstance(GROUP_ID2, str):        
         try:
-            dispatcher.bot.sendMessage(f"{GROUP_ID2}", f"♻️ 𝗕𝗢𝗧 𝗥𝗘𝗦𝗧𝗔𝗥𝗧𝗘𝗗 ♻️\n{jam}\n\n🗺️『𝗧𝗜𝗠𝗘 𝗭𝗢𝗡𝗘』\n{TIMEZONE}\n\n𝙿𝙻𝙴𝙰𝚂𝙴 𝚁𝙴-𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳 𝙰𝙶𝙰𝙸𝙽\n\n𝐐𝐮𝐨𝐭𝐞\n{quo_te}")
+            dispatcher.bot.sendMessage(f"{GROUP_ID2}", f"♻️ 𝗕𝗢𝗧 𝗥𝗘𝗦𝗧𝗔𝗥𝗧𝗘𝗗 ♻️\n{jam}\n\n『𝗧𝗜𝗠𝗘 𝗭𝗢𝗡𝗘』{TIMEZONE}\n\n𝙿𝙻𝙴𝙰𝚂𝙴 𝚁𝙴-𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳 𝙰𝙶𝙰𝙸𝙽\n\n𝐐𝐮𝐨𝐭𝐞\n{quo_te}")
         except Unauthorized:
             LOGGER.warning(
                 "Bot isnt able to send message to support_chat, go and check!"
