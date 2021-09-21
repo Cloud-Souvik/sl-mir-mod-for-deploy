@@ -8,7 +8,7 @@ from sys import executable
 from pyrogram import idle, filters, types, emoji
 from bot import *
 from datetime import datetime
-#from quoters import Quote
+from quoters import Quote
 import pytz
 import time
 import threading
@@ -21,7 +21,6 @@ from telegram import ParseMode
 from telegram.ext import CommandHandler
 from telegraph import Telegraph
 from wserver import start_server_async
-#from bot import bot, app, dispatcher, updater, botStartTime, IGNORE_PENDING_REQUESTS, IS_VPS, PORT, alive, web, OWNER_ID, AUTHORIZED_CHATS, telegraph_token
 from bot.helper.ext_utils import fs_utils
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import *
@@ -47,7 +46,7 @@ def stats(update, context):
     stats = f'╭──────┗ 𝐁𝐎𝐓 𝐒𝐓𝐀𝐓𝐒 ┓────\n│\n' \
             f'├─<b>⌛ BOT UPTIME:</b> <code>{currentTime}</code>\n' \
             f'├─<b>⏳ START TIME ⏳</b>───\n├─<code>{current}</code>\n' \
-            f'├────<b>⚙️ ƧYƧTΣM UƧΛGΣ ⚙️</b>───\n' \
+            f'├───<b>⚙️ ƧYƧTΣM UƧΛGΣ ⚙️</b>──\n' \
             f'├─<b>💿 Total:</b> <code>{total}</code>\n' \
             f'├─<b>📀 Used:</b> <code>{used}</code>\n' \
             f'├─<b>🕊️ Free:</b> <code>{free}</code>\n├─────────\n' \
@@ -55,7 +54,7 @@ def stats(update, context):
             f'├─<b>🖥️ RAM:</b> <code>{memory}%</code>\n' \
             f'├─<b>💽 DISK:</b> <code>{disk}%</code>\n' \
             f'├────<b>📊 DΛTΛ USΛGΣ 📊</b>───\n├─<b>📤 Upload:</b> <code>{sent}</code>\n' \
-            f'├─<b>📥 Download:</b> <code>{recv}</code>\n╰──────────────────────'
+            f'├─<b>📥 Download:</b> <code>{recv}</code>\n╰───────────────────'
     sendMessage(stats, context.bot, update)
 
 
@@ -218,7 +217,7 @@ botcmds = [
 
 def main():
     # Heroku restarted
-    quo_te = "sample quote"
+    quo_te = Quote.print()
     GROUP_ID = f'{RESTARTED_GROUP_ID}'
     kie = datetime.now(pytz.timezone(f'{TIMEZONE}'))
     jam = kie.strftime('\n📅 𝘿𝘼𝙏𝙀: %d/%m/%Y\n⏲️ 𝙏𝙄𝙈𝙀: %I:%M%P')
